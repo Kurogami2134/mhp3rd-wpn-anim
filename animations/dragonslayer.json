@@ -1,0 +1,20 @@
+{
+    "type": "gs",
+    "texture": {
+
+    },
+    "model": [
+        {
+            "type": "SCALE",
+            "bone": 3,
+            "keyframes": [
+                0,
+                0,
+                0,
+                272,
+                288,
+                336
+            ]
+        }
+    ]
+}

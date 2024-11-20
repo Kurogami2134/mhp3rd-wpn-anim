@@ -1,0 +1,75 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build mod binaries",
+            "type": "shell",
+            "command": "armips",
+            "args": [
+                "src/wpn_anim_expansion.asm",
+                "-sym2",
+                "bin/p3rd-wpn-anim.sym"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Create mod",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "createmod.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": [],
+            "dependsOn":["Build mod binaries"]
+        },
+        {
+            "label": "Create animation pack",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "createpack.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build all",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Finished"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": [],
+            "dependsOn":["Create mod", "Create animation pack"]
+        }
+    ]
+}
