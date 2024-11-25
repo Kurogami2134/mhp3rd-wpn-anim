@@ -78,7 +78,7 @@ class AnimExpansion:
     def __init__(self) -> None:
         self.entries: list[AnimEntry] = []
     
-    def build(self, entry_add: int = 0x9990000) -> bytes:
+    def build(self, entry_add: int = 0x99C0000) -> bytes:
         start: int = entry_add
         entries: bytes = b''
         anim: bytes = b''
