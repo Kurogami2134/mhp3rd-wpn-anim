@@ -63,6 +63,8 @@ class AnimEntry:
         data = b''
         for anim in self.model:
             data += anim.data
+        for anim in self.texture:
+            data += anim.data
         
         return data
 
@@ -117,6 +119,6 @@ def load_anim_entry(path) -> AnimEntry:
         entry.model[-1].mdl = True
     for tex in data["texture"]:
         entry.texture.append(load_anim(tex))
-        entry.model[-1].mdl = False
+        entry.texture[-1].mdl = False
     
     return entry

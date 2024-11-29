@@ -1,8 +1,8 @@
 {
     "type": "gs",
-    "texture": {
+    "texture": [
 
-    },
+    ],
     "model": [
         {
             "type": "SCALE",
