@@ -8,7 +8,25 @@
             "type": "shell",
             "command": "armips",
             "args": [
-                "src/wpn_anim_expansion.asm",
+                "src/main.asm",
+                "-sym2",
+                "bin/p3rd-wpn-anim.sym"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build HD mod binaries",
+            "type": "shell",
+            "command": "armips",
+            "args": [
+                "src/main_hd.asm",
                 "-sym2",
                 "bin/p3rd-wpn-anim.sym"
             ],
@@ -39,6 +57,24 @@
             "dependsOn":["Build mod binaries"]
         },
         {
+            "label": "Create HD mod",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "createmod.py",
+                "hd_ver"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": [],
+            "dependsOn":["Build HD mod binaries"]
+        },
+        {
             "label": "Create animation pack",
             "type": "shell",
             "command": "python",
@@ -55,7 +91,24 @@
             "problemMatcher": []
         },
         {
-            "label": "Build all",
+            "label": "Create HD animation pack",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "createpack.py",
+                "hd_ver"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build All (No-HD)",
             "type": "shell",
             "command": "echo",
             "args": [
@@ -63,13 +116,30 @@
             ],
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             },
             "presentation": {
                 "reveal": "silent"
             },
             "problemMatcher": [],
             "dependsOn":["Create mod", "Create animation pack"]
+        },
+        {
+            "label": "Build All (HD)",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Finished"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": [],
+            "dependsOn":["Create HD mod", "Create HD animation pack"]
         }
     ]
 }

@@ -1,6 +1,12 @@
+from sys import argv
 from json import load
 from struct import pack
 
+
+if "hd_ver" in argv:
+    ANIM_LOAD_ADD = 0x0B000400
+else:
+    ANIM_LOAD_ADD = 0x099C0000
 
 with open("anim_types.json", "r", encoding="utf-8") as file:
     ANIM_TYPES = load(file)
@@ -31,7 +37,7 @@ class Anim:
 
     @property
     def data(self) -> bytes:
-        return pack("<2BxB6I", ANIM_TYPES["MODEL" if self.mdl else "TEXTURE"][self.type], self.bone, 3, *self.frames)
+        return pack("<2BxB6i", ANIM_TYPES["MODEL" if self.mdl else "TEXTURE"][self.type], self.bone, 3, *self.frames)
 
 
 class AnimEntry:
@@ -80,7 +86,7 @@ class AnimExpansion:
     def __init__(self) -> None:
         self.entries: list[AnimEntry] = []
     
-    def build(self, entry_add: int = 0x99C0000) -> bytes:
+    def build(self, entry_add: int = ANIM_LOAD_ADD) -> bytes:
         start: int = entry_add
         entries: bytes = b''
         anim: bytes = b''

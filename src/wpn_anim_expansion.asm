@@ -1,23 +1,24 @@
-.psp
-
-
-.createfile "bin/anim_expansion", 0x08800800
-    lui     at, 0x99C
+.createfile "bin/anim_expansion", MAIN_ADDRESS
+.func anim_expansion
+    li      at, ANIM_LOAD_ADD
     slt     at, v1, at
     beq     at, zero, end
     nop
-    lui     a1, 0x99C
+    li      a1, ANIM_LOAD_ADD
     addiu   v1, a1, -0x14
     addiu   a2, v1, 0x2
-    j       0x088A4334
+    j       HOOK_ADD-0x30
     nop
 end:
     lw      s3, 0xC(sp)
-    j       0x088A436C
+    j       HOOK_ADD+8
     lw      ra, 0x10(sp)
+.endfunc
+
+.warning org()
 .close
 
-.createfile "bin/hook", 0x088A4364
-    j       0x8800800
+.createfile "bin/hook", HOOK_ADD
+    j       anim_expansion
     nop
 .close

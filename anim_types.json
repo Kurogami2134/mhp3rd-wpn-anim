@@ -18,6 +18,9 @@
         "SCALE_XY": 12,
         "SCALE_XZ": 9,
         "SCALE_YZ": 10,
-        "SCALE_Z": 11
+        "SCALE_Z": 11,
+        "TRANSLATE_Y": 15,
+        "TRANSLATE_X": 16,
+        "TRANSLATE_Z": 17
     }
 }
