@@ -130,13 +130,13 @@ class Anim(Frame):
         self.bone.set(bone)
 
         self.info = Label(self, text=f'{self.anim_id}')
-        self.bone_label = Label(self, text="BONE: ")
+        self.bone_label = Label(self, text="BONE: " if a_type is AnimType.Vertex else "OBJ: ")
         self.bone_entry = Entry(self, textvariable=self.bone, width=2)
 
-        self.frame_entrys: Frame = Frame(self)
+        self.frame_entries: Frame = Frame(self)
         for i in range(6):
-            Scale(self.frame_entrys, from_=ANIM_TYPE_RANGES[a_type.value][a_id][0], to=ANIM_TYPE_RANGES[a_type.value][a_id][1], variable=self.frame_vars[i]).grid(row=i, column=1, sticky="WE")
-            Label(self.frame_entrys, textvariable=self.frame_vars[i], width=5).grid(row=i, column=0, sticky="WE")
+            Scale(self.frame_entries, from_=ANIM_TYPE_RANGES[a_type.value][a_id][0], to=ANIM_TYPE_RANGES[a_type.value][a_id][1], variable=self.frame_vars[i]).grid(row=i, column=1, sticky="WE")
+            Label(self.frame_entries, textvariable=self.frame_vars[i], width=5).grid(row=i, column=0, sticky="WE")
 
         self.toggle_button = Button(self, text="↓", command=self.toggle)
         
@@ -151,9 +151,9 @@ class Anim(Frame):
     def toggle(self) -> None:
         if self.showing_frames:
             self.toggle_button.config(text="↓")
-            self.frame_entrys.grid_forget()
+            self.frame_entries.grid_forget()
         else:
-            self.frame_entrys.grid(row=2, column=0, columnspan=3, sticky="WE")
+            self.frame_entries.grid(row=2, column=0, columnspan=3, sticky="WE")
             self.toggle_button.config(text="↑")
         
         self.showing_frames = not self.showing_frames
@@ -180,36 +180,48 @@ class App(Tk):
         super().__init__()
         self.running = False
         self.title("WPN ANIM RTE")
-        self.minsize(200, 300)
+        self.minsize(200, 100)
         self.ram: PspRamIO
         self.animations: list[Anim] = []
+
+        self.init_button = Button(self, text="Start", command=self.init)
+        self.instruct_text = Label(self, text="Load MHP3rd (ULJM05800) in PPSSPP,\nequip a modded weapon using\ncustom animations and press 'Start'.", anchor="center", justify="center")
+        self.instruct_text.pack()
+        self.init_button.pack()
     
     def destroy(self):
+        try:
+            self.ram.close()
+        except:
+            pass
         self.running = False
         return super().destroy()
     
     def init(self) -> None:
-        get_animations(self, ram)
+        self.ram = PspRamIO()
+        self.init_button.pack_forget()
+        self.instruct_text.pack_forget()
+        get_animations(self, self.ram)
         Button(self, text="Update", command=self.inject).pack(fill=X, expand=True)
-        Button(self, text="Get Json", command=self.gen_gson).pack(fill=X, expand=True)
+        Button(self, text="Get Json", command=self.gen_json).pack(fill=X, expand=True)
     
     def inject(self) -> None:
-        mdl_id = get_model_id(ram)
-        wpn_type = get_weapon_type(ram)
-        entry = get_anim_entry(ram, mdl_id, wpn_type)
+        mdl_id = get_model_id(self.ram)
+        wpn_type = get_weapon_type(self.ram)
+        entry = get_anim_entry(self.ram, mdl_id, wpn_type)
 
         anim_idx = 0
 
-        ram.seek(entry["mdl_add"])
+        self.ram.seek(entry["mdl_add"])
         for _ in range(entry["mdl_count"]):
-            ram.write(self.animations[anim_idx].get_anim())
+            self.ram.write(self.animations[anim_idx].get_anim())
             anim_idx += 1
-        ram.seek(entry["tex_add"])
+        self.ram.seek(entry["tex_add"])
         for _ in range(entry["tex_count"]):
-            ram.write(self.animations[anim_idx].get_anim())
+            self.ram.write(self.animations[anim_idx].get_anim())
             anim_idx += 1
     
-    def gen_gson(self) -> None:
+    def gen_json(self) -> None:
         data = {
             "type": WPN_TYPES[get_weapon_type(self.ram) - 5],
             "model": [],
@@ -229,9 +241,7 @@ class App(Tk):
         txt_box.insert("1.0", dumps(data, indent=2))
         txt_box.pack()
     
-    def run(self, ram) -> None:
-        self.ram = ram
-        self.init()
+    def run(self) -> None:
         self.running = True
         while self.running:
             self.update()
@@ -277,6 +287,5 @@ def get_animations(root: App, ram: PspRamIO) -> None:
 
 
 if __name__ == "__main__":
-    with PspRamIO() as ram:
-        a = App()
-        a.run(ram)
+    a = App()
+    a.run()
