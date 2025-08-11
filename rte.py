@@ -121,6 +121,9 @@ class Anim(Frame):
         self.bone: IntVar = IntVar()
         self.frame_vars: list[IntVar] = [IntVar() for _ in range(6)]
         self.showing_frames: bool = False
+        self.columnconfigure(0, weight=2)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
 
         for x in range(6):
             self.frame_vars[x].set(keyframes[x])
@@ -132,27 +135,26 @@ class Anim(Frame):
 
         self.frame_entrys: Frame = Frame(self)
         for i in range(6):
-            Scale(self.frame_entrys, from_=ANIM_TYPE_RANGES[a_type.value][a_id][0], to=ANIM_TYPE_RANGES[a_type.value][a_id][1], variable=self.frame_vars[i]).grid(row=i, column=1)
-            Label(self.frame_entrys, textvariable=self.frame_vars[i], width=5).grid(row=i, column=0)
+            Scale(self.frame_entrys, from_=ANIM_TYPE_RANGES[a_type.value][a_id][0], to=ANIM_TYPE_RANGES[a_type.value][a_id][1], variable=self.frame_vars[i]).grid(row=i, column=1, sticky="WE")
+            Label(self.frame_entrys, textvariable=self.frame_vars[i], width=5).grid(row=i, column=0, sticky="WE")
 
-        self.toggle_button = Button(self, text="v", command=self.toggle)
+        self.toggle_button = Button(self, text="↓", command=self.toggle)
         
-        self.info.grid(row=0, column=0)
-        self.bone_label.grid(row=1, column=0)
-        self.bone_entry.grid(row=1, column=1)
-        #self.frame_entrys.grid(row=2, column=0, columnspan=2)
-        self.toggle_button.grid(row=3, column=0, columnspan=2)
+        self.info.grid(row=0, column=0, sticky="WE")
+        self.bone_label.grid(row=0, column=1, sticky="WE")
+        self.bone_entry.grid(row=0, column=2, sticky="WE")
+        self.toggle_button.grid(row=3, column=0, columnspan=3, sticky="WE")
     
     def snap_scales(self) -> None:
         [x.set(x.get()) for x in self.frame_vars]
     
     def toggle(self) -> None:
         if self.showing_frames:
-            self.toggle_button.config(text="v")
+            self.toggle_button.config(text="↓")
             self.frame_entrys.grid_forget()
         else:
-            self.frame_entrys.grid(row=2, column=0, columnspan=2)
-            self.toggle_button.config(text="^")
+            self.frame_entrys.grid(row=2, column=0, columnspan=3, sticky="WE")
+            self.toggle_button.config(text="↑")
         
         self.showing_frames = not self.showing_frames
     
@@ -188,8 +190,8 @@ class App(Tk):
     
     def init(self) -> None:
         get_animations(self, ram)
-        Button(self, text="Update", command=self.inject).pack()
-        Button(self, text="Get Json", command=self.gen_gson).pack()
+        Button(self, text="Update", command=self.inject).pack(fill=X, expand=True)
+        Button(self, text="Get Json", command=self.gen_gson).pack(fill=X, expand=True)
     
     def inject(self) -> None:
         mdl_id = get_model_id(ram)
@@ -240,7 +242,7 @@ def get_animations(root: App, ram: PspRamIO) -> None:
     wpn_type = get_weapon_type(ram)
     entry = get_anim_entry(ram, mdl_id, wpn_type)
     
-    Label(root, text="Model").pack()
+    Label(root, text="Model", anchor="center", background="lightgrey").pack(fill=X, expand=True)
 
     ram.seek(entry["mdl_add"])
     for _ in range(entry["mdl_count"]):
@@ -252,11 +254,11 @@ def get_animations(root: App, ram: PspRamIO) -> None:
             bone=anim_info[1]
         )
         root.animations.append(anim)
-        root.animations[-1].pack()
+        root.animations[-1].pack(fill=X, expand=True)
 
     Separator(root, orient="horizontal").pack(fill=X, expand=True)
     
-    Label(root, text="Texture").pack()
+    Label(root, text="Texture", anchor="center", background="lightgrey").pack(fill=X, expand=True)
 
     ram.seek(entry["tex_add"])
     for _ in range(entry["tex_count"]):
@@ -268,7 +270,7 @@ def get_animations(root: App, ram: PspRamIO) -> None:
             bone=anim_info[1]
         )
         root.animations.append(anim)
-        root.animations[-1].pack()
+        root.animations[-1].pack(fill=X, expand=True)
     
     Separator(root, orient="horizontal").pack(fill=X, expand=True)
 
