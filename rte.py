@@ -54,6 +54,34 @@ WPN_TYPES = {
     12: "hh"
 }
 
+ANIM_TYPE_RANGES = {
+    "Texture": {
+        "H_STRIDE": (0, 128),
+        "V_STRIDE": (0, 128),
+        "LUMA (SMOOTH)": (0, 255),
+        "LUMA": (0, 255),
+        "ALPHA": (0, 255),
+        "RGB": (0, 1),
+        "VISIBLE": (0, 1)
+    },
+    "Vertex": {
+        "ROTATE_X": (0, 500),
+        "ROTATE_Y": (0, 500),
+        "ROTATE_Z": (0, 500),
+        "ROTATION_X": (0, 4),
+        "ROTATION_Y": (0, 4),
+        "ROTATION_Z": (0, 4),
+        "SCALE": (0, 300),
+        "SCALE_XY": (0, 300),
+        "SCALE_XZ": (0, 300),
+        "SCALE_YZ": (0, 300),
+        "SCALE_Z": (0, 300),
+        "TRANSLATE_Y": (0, 500),
+        "TRANSLATE_X": (0, 500),
+        "TRANSLATE_Z": (0, 500)
+    }
+}
+
 def get_model_id(ram: PspRamIO) -> int:
     wpn_type = get_weapon_type(ram)
     ram.seek(EQUIPPED_WEAPON + 2)
@@ -104,7 +132,7 @@ class Anim(Frame):
 
         self.frame_entrys: Frame = Frame(self)
         for i in range(6):
-            Scale(self.frame_entrys, from_=0, to=100, variable=self.frame_vars[i]).grid(row=i, column=1)
+            Scale(self.frame_entrys, from_=ANIM_TYPE_RANGES[a_type.value][a_id][0], to=ANIM_TYPE_RANGES[a_type.value][a_id][1], variable=self.frame_vars[i]).grid(row=i, column=1)
             Label(self.frame_entrys, textvariable=self.frame_vars[i], width=5).grid(row=i, column=0)
 
         self.toggle_button = Button(self, text="v", command=self.toggle)
