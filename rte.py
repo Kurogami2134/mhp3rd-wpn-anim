@@ -60,8 +60,8 @@ WPN_TYPES = {
 
 ANIM_TYPE_RANGES = {
     "Texture": {
-        "H_STRIDE": (0, 128),
-        "V_STRIDE": (0, 128),
+        "H_STRIDE": (-128, 128),
+        "V_STRIDE": (-128, 128),
         "LUMA (SMOOTH)": (0, 255),
         "LUMA": (0, 255),
         "VISIBLE(WEIRD)": (0, 255),
