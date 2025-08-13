@@ -17,9 +17,10 @@ R_ANIM_TYPES = {
     "MODEL": {v: k for k, v in ANIM_TYPES["MODEL"].items()},
     "TEXTURE": {v: k for k, v in ANIM_TYPES["TEXTURE"].items()}
 }
-ANIM_LOAD    = 0x099C0000
-TEST_TEX_ADD = 0x099C0200
-TEST_MDL_ADD = 0x099C0100
+CUSTOM_ANIM_LOAD    = 0x099C0000
+ANIM_LOAD           = 0x089ed9dc
+TEST_TEX_ADD        = 0x099C0200
+TEST_MDL_ADD        = 0x099C0100
 
 EQUIPPED_WEAPON = 0x09B49234
 WEAPON_DATA = [
@@ -63,6 +64,7 @@ ANIM_TYPE_RANGES = {
         "V_STRIDE": (0, 128),
         "LUMA (SMOOTH)": (0, 255),
         "LUMA": (0, 255),
+        "VISIBLE(WEIRD)": (0, 255),
         "ALPHA": (0, 255),
         "RGB": (0, 1),
         "VISIBLE": (0, 1)
@@ -110,7 +112,16 @@ def get_anim_entry(ram: PspRamIO, mdl_id: int, wpn_type: int) -> dict[str, int]:
             ram.seek(-4, 1)
             print("Found it!")
             entry["mdl_count"], entry["tex_count"], entry["mdl_add"], entry["tex_add"] = unpack("<3x2B3x2I4x", ram.read(20))
-            break
+            return entry
+        else:
+            ram.seek(0x10, 1)
+    ram.seek(CUSTOM_ANIM_LOAD)
+    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+        if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
+            ram.seek(-4, 1)
+            print("Found it!")
+            entry["mdl_count"], entry["tex_count"], entry["mdl_add"], entry["tex_add"] = unpack("<3x2B3x2I4x", ram.read(20))
+            return entry
         else:
             ram.seek(0x10, 1)
     return entry
@@ -124,7 +135,18 @@ def overwrite_entry(ram: PspRamIO, mdl_id: int, wpn_type: int, mdl_count: int, t
             ram.write(pack("<2B", mdl_count, tex_count))
             ram.seek(3, 1)
             ram.write(pack("<2I", mdl_addr, tex_addr))
-            break
+            return
+        else:
+            ram.seek(0x10, 1)
+    ram.seek(CUSTOM_ANIM_LOAD)
+    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+        if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
+            ram.seek(-1, 1)
+            print("Found it!")
+            ram.write(pack("<2B", mdl_count, tex_count))
+            ram.seek(3, 1)
+            ram.write(pack("<2I", mdl_addr, tex_addr))
+            return
         else:
             ram.seek(0x10, 1)
 
@@ -144,7 +166,7 @@ class Anim(Frame):
             self.frame_vars[x].set(keyframes[x])
         self.bone.set(bone)
 
-        self.info = OptionMenu(self, self.anim_id, *ANIM_TYPES["MODEL" if a_type is AnimType.Vertex else "TEXTURE"].keys(), command=self.update_scales)
+        self.info = OptionMenu(self, self.anim_id, list(ANIM_TYPES["MODEL" if a_type is AnimType.Vertex else "TEXTURE"].keys())[0], *ANIM_TYPES["MODEL" if a_type is AnimType.Vertex else "TEXTURE"].keys(), command=self.update_scales)
 
         self.anim_id.set(a_id)
 
@@ -219,7 +241,7 @@ class App(Tk):
         self.tex_frame: Frame = Frame(self)
 
         self.init_button = Button(self, text="Start", command=self.init)
-        self.instruct_text = Label(self, text="Load MHP3rd (ULJM05800) in PPSSPP,\nequip a modded weapon using\ncustom animations and press 'Start'.", anchor="center", justify="center")
+        self.instruct_text = Label(self, text="Load MHP3rd (ULJM05800) in PPSSPP,\nequip a weapon that uses custom\nanimations and press 'Start'.", anchor="center", justify="center")
         self.instruct_text.pack()
         self.init_button.pack()
 

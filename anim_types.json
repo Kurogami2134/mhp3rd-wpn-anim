@@ -6,7 +6,8 @@
         "LUMA": 32,
         "ALPHA": 35,
         "RGB": 36,
-        "VISIBLE": 41
+        "VISIBLE": 41,
+        "VISIBLE(WEIRD)": 34
     },
     "MODEL": {
         "ROTATE_X": 6,
