@@ -1,3 +1,20 @@
+"""
+
+Anim Entry Format:
+
+    short WeaponType;
+    byte ModelID;
+    byte ModelAnimCount;
+    byte TexAnimCount;
+    byte UnkAnimCount;
+    byte RestingPosition;
+    byte padding;
+    int ModelAnimAdd;
+    int TexAnimAdd;
+    int UnkAnimAdd;
+
+"""
+
 from ModIO import PspRamIO
 from json import load, dumps
 from struct import pack, unpack
@@ -66,6 +83,7 @@ ANIM_TYPE_RANGES = {
         "LUMA": (0, 255),
         "VISIBLE(WEIRD)": (0, 255),
         "ALPHA": (0, 255),
+        "COLOR": (0, 255),
         "RGB": (0, 1),
         "VISIBLE": (0, 1)
     },
@@ -83,7 +101,8 @@ ANIM_TYPE_RANGES = {
         "SCALE_Z": (0, 300),
         "TRANSLATE_Y": (-300, 300),
         "TRANSLATE_X": (-300, 300),
-        "TRANSLATE_Z": (-300, 300)
+        "TRANSLATE_Z": (-300, 300),
+        "RECITAL": (-10, 10)
     }
 }
 
@@ -103,52 +122,59 @@ def get_anim_entry(ram: PspRamIO, mdl_id: int, wpn_type: int) -> dict[str, int]:
     entry = {
         "mdl_count": 0,
         "tex_count": 0,
+        "unk_count": 0,
         "mdl_add": 0,
-        "tex_add": 0
+        "tex_add": 0,
+        "unk_add": 0,
+        "resting_pos": 0,
     }
     ram.seek(ANIM_LOAD)
-    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+    while (buf := ram.read(4))[:2] != b'\xFF\xFF':
         if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
             ram.seek(-4, 1)
-            print("Found it!")
-            entry["mdl_count"], entry["tex_count"], entry["mdl_add"], entry["tex_add"] = unpack("<3x2B3x2I4x", ram.read(20))
-            return entry
+            print(f"Found it!: {hex(ram.tell())}")
+            entry["mdl_count"], entry["tex_count"], entry["unk_count"], entry["resting_pos"], entry["mdl_add"], entry["tex_add"], entry["unk_add"] = unpack("<3x4Bx3I", ram.read(20))
+            break
         else:
             ram.seek(0x10, 1)
     ram.seek(CUSTOM_ANIM_LOAD)
-    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+    while (buf := ram.read(4))[:2] != b'\xFF\xFF':
         if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
             ram.seek(-4, 1)
-            print("Found it!")
-            entry["mdl_count"], entry["tex_count"], entry["mdl_add"], entry["tex_add"] = unpack("<3x2B3x2I4x", ram.read(20))
+            print(f"Found it!: {hex(ram.tell())}")
+            entry["mdl_count"], entry["tex_count"], entry["unk_count"], entry["resting_pos"], entry["mdl_add"], entry["tex_add"], entry["unk_add"] = unpack("<3x4Bx3I", ram.read(20))
             return entry
         else:
             ram.seek(0x10, 1)
     return entry
 
-def overwrite_entry(ram: PspRamIO, mdl_id: int, wpn_type: int, mdl_count: int, tex_count: int, mdl_addr: int, tex_addr: int):
+def overwrite_entry(ram: PspRamIO, mdl_id: int, wpn_type: int, mdl_count: int, tex_count: int, mdl_addr: int, tex_addr: int, resting_pos: int):
     ram.seek(ANIM_LOAD)
-    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+    entry_add = 0
+    while (buf := ram.read(4))[:2] != b'\xFF\xFF':
         if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
             ram.seek(-1, 1)
             print("Found it!")
-            ram.write(pack("<2B", mdl_count, tex_count))
-            ram.seek(3, 1)
-            ram.write(pack("<2I", mdl_addr, tex_addr))
-            return
+            entry_add = ram.tell()
+            break
         else:
             ram.seek(0x10, 1)
     ram.seek(CUSTOM_ANIM_LOAD)
-    while (buf := ram.read(4)) != b'\xFF\xFF\xFF\xFF':
+    while (buf := ram.read(4))[:2] != b'\xFF\xFF':
         if (wpn_type-5, mdl_id) == unpack('<HBx', buf):
             ram.seek(-1, 1)
             print("Found it!")
-            ram.write(pack("<2B", mdl_count, tex_count))
-            ram.seek(3, 1)
-            ram.write(pack("<2I", mdl_addr, tex_addr))
-            return
+            entry_add = ram.tell()
+            break
         else:
             ram.seek(0x10, 1)
+    if entry_add != 0:
+        ram.seek(entry_add)
+        ram.write(pack("<2B", mdl_count, tex_count))
+        ram.seek(1, 1)
+        ram.write(pack("<B", resting_pos))
+        ram.seek(1, 1)
+        ram.write(pack("<2I", mdl_addr, tex_addr))
 
 class Anim(Frame):
     def __init__(self, app, master, a_type: AnimType, a_id: str, keyframes: list[int], bone: int):
@@ -236,6 +262,8 @@ class App(Tk):
         self.ram: PspRamIO
         self.mdl_animations: list[Anim] = []
         self.tex_animations: list[Anim] = []
+        self.resting_pos: IntVar = IntVar()
+        self.resting_pos.set(0)
 
         self.mdl_frame: Frame = Frame(self)
         self.tex_frame: Frame = Frame(self)
@@ -335,6 +363,8 @@ class App(Tk):
 
     def init(self) -> None:
         self.init_button.pack_forget()
+        Label(self, text="Resting Position", anchor="center", background="lightgrey").pack(fill=X, expand=True)
+        LabeledScale(self, from_=0, to=69, variable=self.resting_pos).pack(fill=X, expand=True)
         self.instruct_text.pack_forget()
         Label(self, text="Model", anchor="center", background="lightgrey").pack(fill=X, expand=True)
         self.mdl_frame.pack(fill=X, expand=True)
@@ -353,7 +383,7 @@ class App(Tk):
     def inject(self) -> None:
         mdl_id = get_model_id(self.ram)
         wpn_type = get_weapon_type(self.ram)
-        overwrite_entry(self.ram, mdl_id, wpn_type, len(self.mdl_animations), len(self.tex_animations), TEST_MDL_ADD, TEST_TEX_ADD)
+        overwrite_entry(self.ram, mdl_id, wpn_type, len(self.mdl_animations), len(self.tex_animations), TEST_MDL_ADD, TEST_TEX_ADD, self.resting_pos.get())
 
         self.ram.seek(TEST_MDL_ADD)
         for anim in self.mdl_animations:
@@ -365,6 +395,7 @@ class App(Tk):
     def gen_json(self) -> None:
         data = {
             "type": WPN_TYPES[get_weapon_type(self.ram) - 5],
+            "resting_pos": self.resting_pos.get(),
             "model": [],
             "texture": []
         }
